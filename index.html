@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAT Matematika Test</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,Arial,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;padding:14px}
+  .wrap{max-width:760px;margin:0 auto}
+  .card{background:#1e293b;border-radius:14px;padding:18px;margin-bottom:14px}
+  h1{font-size:24px;margin-bottom:8px}
+  p{line-height:1.5;color:#cbd5e1}
+  ul{margin:10px 0 16px 20px;color:#cbd5e1;line-height:1.7}
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:10px}
+  .big{padding:14px 26px;background:#22c55e;color:#fff;font-size:17px;font-weight:700}
+  .btn{padding:11px 18px;background:#475569;color:#fff;font-size:15px;font-weight:600}
+  .btn.red{background:#ef4444}.btn.blue{background:#2563eb}
+  .btn:disabled{opacity:.4;cursor:default}
+  .top{position:sticky;top:0;z-index:5;background:#0f172a;padding:8px 0;display:flex;align-items:center;gap:10px;justify-content:space-between}
+  #timer{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;color:#fbbf24}
+  #timer.low{color:#ef4444}
+  .qnum{font-size:13px;color:#94a3b8;margin-bottom:8px}
+  .qtext{font-size:20px;line-height:1.5;margin-bottom:16px}
+  .opt{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:13px 14px;margin-bottom:10px;background:#0f172a;border:2px solid #334155;color:#e2e8f0;font-size:18px;border-radius:12px}
+  .opt:hover{border-color:#64748b}
+  .opt.sel{border-color:#3b82f6;background:#1e3a8a}
+  .opt.ok{border-color:#22c55e;background:#14532d}
+  .opt.bad{border-color:#ef4444;background:#7f1d1d}
+  .opt b{width:28px;height:28px;border-radius:50%;background:#334155;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+  .nav{display:flex;justify-content:space-between;gap:10px;margin-top:6px}
+  #grid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px}
+  #grid button{aspect-ratio:1;background:#334155;color:#cbd5e1;font-size:12px;border-radius:6px}
+  #grid button.done{background:#2563eb;color:#fff}
+  #grid button.cur{outline:2px solid #fbbf24}
+  .score{font-size:56px;font-weight:800;color:#22c55e;text-align:center}
+  .center{text-align:center}
+  .sol{margin-top:8px;padding:10px;background:#0f172a;border-left:4px solid #fbbf24;border-radius:6px;font-size:15px;color:#cbd5e1}
+  .rev{border-top:1px solid #334155;padding-top:14px;margin-top:14px}
+  .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;margin-left:6px}
+  .tag.g{background:#14532d}.tag.r{background:#7f1d1d}.tag.n{background:#334155}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- BOSHLASH -->
+<div id="start" class="card hidden">
+  <h1>📐 SAT Matematika Test</h1>
+  <p>1 000 000 ta savollik bazadan har safar tasodifiy savollar tanlanadi.</p>
+  <ul>
+    <li>100 ta savol</li>
+    <li>30 daqiqa vaqt</li>
+    <li>Har savolda 4 ta variant (A, B, C, D)</li>
+    <li>Oxirida natija va har bir savolning yechimi ko'rsatiladi</li>
+    <li>Sahifani yangilasangiz ham test davom etadi</li>
+  </ul>
+  <div class="center"><button class="big" id="startBtn">Testni boshlash</button></div>
+</div>
+
+<!-- TEST -->
+<div id="test" class="hidden">
+  <div class="top">
+    <div id="timer">30:00</div>
+    <div id="count" style="color:#94a3b8;font-size:14px"></div>
+    <button class="btn red" id="finishBtn">Yakunlash</button>
+  </div>
+  <div class="card">
+    <div class="qnum" id="qnum"></div>
+    <div class="qtext" id="qtext"></div>
+    <div id="opts"></div>
+    <div class="nav">
+      <button class="btn" id="prev">◀ Oldingi</button>
+      <button class="btn blue" id="next">Keyingi ▶</button>
+    </div>
+  </div>
+  <div class="card"><div id="grid"></div></div>
+</div>
+
+<!-- NATIJA -->
+<div id="result" class="hidden">
+  <div class="card">
+    <h1 class="center">Natija</h1>
+    <div class="score" id="score"></div>
+    <p class="center" id="scoreInfo"></p>
+    <div class="center" style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn" id="toggleWrong">Faqat xatolarni ko'rsatish</button>
+      <button class="big" id="againBtn">Yangi test</button>
+    </div>
+  </div>
+  <div class="card" id="review"></div>
+</div>
+
+</div>
+
+<script>
+// ---------- Tasodifiy son generatori (id bo'yicha bir xil savol) ----------
+function rng(seed){let a=seed>>>0;return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const ri=(r,lo,hi)=>lo+Math.floor(r()*(hi-lo+1));
+const nz=v=>v===0?1:v;
+const fm=n=>typeof n==='number'?(n<0?'−'+(-n):String(n)):String(n);
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+const sup=(b,e)=>`${b}<sup>${e}</sup>`;
+function poly(cs){
+  let s='';
+  for(const [c,v] of cs){
+    if(c===0) continue;
+    const ab=Math.abs(c), body=(ab===1&&v)?v:ab+v;
+    if(!s) s=(c<0?'−':'')+body; else s+=(c<0?' − ':' + ')+body;
+  }
+  return s||'0';
+}
+const frac=(p,q)=>{const g=gcd(p,q);return `${p/g}/${q/g}`};
+
+// ---------- Savol shablonlari (20 tur) ----------
+const T=[
+ // 0: chiziqli tenglama
+ r=>{const x=ri(r,-12,15),a=ri(r,2,9),b=nz(ri(r,-20,20)),c=a*x+b;
+  return {t:`${poly([[a,'x'],[b,'']])} = ${fm(c)} bo'lsa, x nechaga teng?`,a:x,w:[x+1,x-1,(c+b)/a,c-b],
+   s:`${a}x = ${fm(c)} ${b<0?'+':'−'} ${Math.abs(b)} = ${fm(c-b)}, demak x = ${fm(x)}.`};},
+ // 1: ikki tomonda x
+ r=>{const x=ri(r,-9,12),a=ri(r,3,9),c=ri(r,1,a-1),b=nz(ri(r,-15,15)),d=a*x+b-c*x;
+  return {t:`${poly([[a,'x'],[b,'']])} = ${poly([[c,'x'],[d,'']])} bo'lsa, x nechaga teng?`,a:x,w:[-x,x+1,x-1,(d+b)/(a+c)],
+   s:`${a}x − ${c}x = ${fm(d)} − (${fm(b)}) ⇒ ${a-c}x = ${fm(d-b)} ⇒ x = ${fm(x)}.`};},
+ // 2: foiz
+ r=>{const k=ri(r,2,40),n=20*k,p=5*ri(r,1,19),a=k*p/5;
+  return {t:`${n} ning ${p}% i nechaga teng?`,a,w:[n*(100-p)/100,n*p/10,n/p*10,n*p/1000],
+   s:`${n} · ${p}/100 = ${a}.`};},
+ // 3: narx oshishi
+ r=>{const P=20*ri(r,2,30),p=5*ri(r,1,12),inc=P*p/100,a=P+inc;
+  return {t:`Mahsulot narxi $${P}. Narx ${p}% ga oshirilsa, yangi narx necha dollar bo'ladi?`,a,w:[inc,P-inc,P+p],
+   s:`Oshish: ${P}·${p}/100 = ${inc}. Yangi narx: ${P} + ${inc} = ${a}.`};},
+ // 4: tenglamalar sistemasi
+ r=>{let x=ri(r,1,15),y=ri(r,1,15);if(x===y)y=x%15+1;const s=x+y,d=x-y,m=ri(r,0,2);
+  const q=['x','y','x · y'][m],a=[x,y,x*y][m],w=[[y,s,d],[x,s,d],[s,d,x+y+1]][m];
+  return {t:`x + y = ${s} va x − y = ${fm(d)} bo'lsa, ${q} nechaga teng?`,a,w,
+   s:`Qo'shsak: 2x = ${s+d} ⇒ x = ${x}. Keyin y = ${s} − ${x} = ${y}.`};},
+ // 5: qiyalik
+ r=>{const m=nz(ri(r,-6,6)),x1=ri(r,-5,5),dx=ri(r,1,5),y1=ri(r,-8,8),x2=x1+dx,y2=y1+m*dx;
+  return {t:`To'g'ri chiziq (${fm(x1)}, ${fm(y1)}) va (${fm(x2)}, ${fm(y2)}) nuqtalardan o'tadi. Uning qiyaligi (burchak koeffitsienti) nechaga teng?`,a:m,w:[-m,m+1,m-1,dx],
+   s:`k = (y₂ − y₁)/(x₂ − x₁) = (${fm(y2)} − ${fm(y1)})/(${fm(x2)} − ${fm(x1)}) = ${fm(m)}.`};},
+ // 6: kvadrat tenglama
+ r=>{let p=ri(r,-9,9),q=ri(r,-9,9);if(p===q)q=p+1;const S=p+q,P=p*q,m=ri(r,0,3);
+  const eq=poly([[1,'x²'],[-S,'x'],[P,'']])+' = 0';
+  const qs=['ildizlari yig\'indisi','ildizlari ko\'paytmasi','katta ildizi','kichik ildizi'][m];
+  const a=[S,P,Math.max(p,q),Math.min(p,q)][m];
+  return {t:`${eq} tenglamaning ${qs} nechaga teng?`,a,w:[p,q,-S,-P,Math.max(p,q)+1],
+   s:`Tenglama (${poly([[1,'x'],[-p,'']])})(${poly([[1,'x'],[-q,'']])}) = 0 ko'rinishida, ildizlar ${fm(p)} va ${fm(q)}.`};},
+ // 7: Pifagor
+ r=>{const tr=[[3,4,5],[5,12,13],[8,15,17],[7,24,25],[20,21,29]][ri(r,0,4)],k=ri(r,1,6),[a1,b1,c1]=tr.map(v=>v*k),m=ri(r,0,1);
+  return m===0
+   ?{t:`To'g'ri burchakli uchburchakning katetlari ${a1} va ${b1}. Gipotenuzasi nechaga teng?`,a:c1,w:[a1+b1,c1+1,c1-1,b1-a1],s:`c² = ${a1}² + ${b1}² = ${c1*c1} ⇒ c = ${c1}.`}
+   :{t:`To'g'ri burchakli uchburchakning gipotenuzasi ${c1}, katetlaridan biri ${a1}. Ikkinchi katetini toping.`,a:b1,w:[c1-a1,c1+a1,b1+1,b1-1],s:`b² = ${c1}² − ${a1}² = ${b1*b1} ⇒ b = ${b1}.`};},
+ // 8: doira
+ r=>{const R=ri(r,2,15),m=ri(r,0,2);
+  if(m===0) return {t:`Radiusi ${R} bo'lgan doiraning yuzi nechaga teng?`,a:`${R*R}π`,w:[`${2*R}π`,`${R}π`,`${2*R*R}π`,`${4*R*R}π`,`${R*R+R}π`,`${3*R}π`],s:`S = πR² = ${R*R}π.`};
+  if(m===1) return {t:`Radiusi ${R} bo'lgan aylananing uzunligi nechaga teng?`,a:`${2*R}π`,w:[`${R*R}π`,`${R}π`,`${4*R}π`,`${3*R}π`,`${R*R+R}π`,`${2*R*R}π`],s:`C = 2πR = ${2*R}π.`};
+  const D=2*R; return {t:`Diametri ${D} bo'lgan doiraning yuzi nechaga teng?`,a:`${R*R}π`,w:[`${D*D}π`,`${D}π`,`${2*D}π`,`${R}π`,`${3*R*R}π`,`${R*R+R}π`],s:`R = ${D}/2 = ${R}, S = πR² = ${R*R}π.`};},
+ // 9: o'rtacha
+ r=>{const n=[0,0,0,0,0].map(()=>ri(r,50,100));let sum=n.reduce((a,b)=>a+b,0);n[4]+=(5-sum%5)%5;sum=n.reduce((a,b)=>a+b,0);
+  const m=sum/5;
+  return {t:`Beshta sonning o'rtacha qiymati ${m}. Ulardan to'rttasi: ${n.slice(0,4).join(', ')}. Beshinchi son nechaga teng?`,a:n[4],w:[m,n[3],n[4]+5,n[4]-5],
+   s:`Yig'indi = 5 · ${m} = ${sum}. Beshinchi son = ${sum} − ${sum-n[4]} = ${n[4]}.`};},
+ // 10: to'rtburchak
+ r=>{const w=ri(r,3,15),l=w+ri(r,1,12),A=w*l;
+  return {t:`To'g'ri to'rtburchakning yuzi ${A}, eni ${w}. Uning perimetri nechaga teng?`,a:2*(w+l),w:[w+l,2*l,A-w,2*(w+l)+2],
+   s:`Bo'yi = ${A}/${w} = ${l}. P = 2(${w} + ${l}) = ${2*(w+l)}.`};},
+ // 11: funksiya
+ r=>{const a=ri(r,1,4),b=ri(r,-6,6),c=ri(r,-10,10),k=ri(r,-4,5),v=a*k*k+b*k+c;
+  return {t:`f(x) = ${poly([[a,'x²'],[b,'x'],[c,'']])} bo'lsa, f(${fm(k)}) nechaga teng?`,a:v,w:[a*k*k-b*k+c,(a*k)*(a*k)+b*k+c,a*k+b*k+c,v+a],
+   s:`f(${fm(k)}) = ${a}·(${fm(k)})² + (${fm(b)})·(${fm(k)}) + (${fm(c)}) = ${fm(v)}.`};},
+ // 12: darajalar
+ r=>{const B=[2,3,5][ri(r,0,2)],a=ri(r,2,9),b=ri(r,2,9),m=ri(r,0,2);
+  if(m===0) return {t:`${sup(B,a)} · ${sup(B,b)} = ${sup(B,'x')} bo'lsa, x nechaga teng?`,a:a+b,w:[a*b,a+b+1,a+b-1,Math.abs(a-b)],s:`Ko'paytirishda darajalar qo'shiladi: ${a} + ${b} = ${a+b}.`};
+  if(m===1) return {t:`(${sup(B,a)})<sup>${b}</sup> = ${sup(B,'x')} bo'lsa, x nechaga teng?`,a:a*b,w:[a+b,a*b+1,a*b-1,a**b],s:`Darajaning darajasida ko'rsatkichlar ko'paytiriladi: ${a} · ${b} = ${a*b}.`};
+  const hi=Math.max(a,b)+1,lo=Math.min(a,b); return {t:`${sup(B,hi)} / ${sup(B,lo)} = ${sup(B,'x')} bo'lsa, x nechaga teng?`,a:hi-lo,w:[hi+lo,hi*lo,hi-lo+1,hi-lo-1],s:`Bo'lishda darajalar ayriladi: ${hi} − ${lo} = ${hi-lo}.`};},
+ // 13: tezlik
+ r=>{const v=10*ri(r,3,9),t=[1.5,2,2.5,3,3.5,4,4.5,5][ri(r,0,7)],a=v*t;
+  return {t:`Avtomobil ${v} km/soat tezlik bilan ${t} soat yurdi. U necha km yo'l bosdi?`,a,w:[v+t,v/t,a+v/2,a-v/2],s:`S = v · t = ${v} · ${t} = ${a} km.`};},
+ // 14: mediana
+ r=>{const n=ri(r,0,1)?7:5,set=new Set();while(set.size<n)set.add(ri(r,5,60));const arr=[...set],srt=[...arr].sort((a,b)=>a-b),mid=(n-1)/2,mean=Math.round(arr.reduce((a,b)=>a+b,0)/n);
+  return {t:`Quyidagi sonlar to'plamining medianasini toping: ${arr.join(', ')}.`,a:srt[mid],w:[arr[mid],mean,srt[mid-1],srt[mid+1]],
+   s:`Tartiblaymiz: ${srt.join(', ')}. O'rtadagi son — ${srt[mid]}.`};},
+ // 15: ehtimollik
+ r=>{const R=ri(r,2,9),B=ri(r,2,9),G=ri(r,1,6),Tt=R+B+G,a=frac(R,Tt);
+  const w=[frac(B,Tt),frac(G,Tt),frac(R,B+G),frac(R+G,Tt),frac(R,Tt+1),frac(Tt-R,Tt)];
+  return {t:`Qopda ${R} ta qizil, ${B} ta ko'k va ${G} ta yashil shar bor. Tasodifiy bitta shar olinsa, u qizil bo'lish ehtimoli qancha?`,a,w,
+   s:`Ehtimollik = ${R}/${Tt}${a!==`${R}/${Tt}`?' = '+a:''}.`};},
+ // 16: tengsizlik
+ r=>{const a=ri(r,2,8),b=ri(r,-10,10),c=ri(r,5,40),t=(c-b)/a,ans=Math.floor(t)+1;
+  return {t:`${poly([[a,'x'],[b,'']])} > ${c} tengsizlikni qanoatlantiruvchi eng kichik butun x ni toping.`,a:ans,w:[ans-1,ans+1,Math.ceil(t)===Math.floor(t)?ans-1:Math.ceil(t)+1,ans+2],
+   s:`${a}x > ${c-b} ⇒ x > ${(c-b)/a<0?'−':''}${Math.abs(Math.round((c-b)/a*100)/100)}. Eng kichik butun yechim: ${ans}.`};},
+ // 17: nuqtalar orasidagi masofa
+ r=>{const tr=[[3,4,5],[5,12,13],[8,15,17],[6,8,10]][ri(r,0,3)],k=ri(r,1,4),dx=tr[0]*k,dy=tr[1]*k,d=tr[2]*k,x1=ri(r,-6,6),y1=ri(r,-6,6),sx=ri(r,0,1)?1:-1,sy=ri(r,0,1)?1:-1;
+  return {t:`Koordinata tekisligida A(${fm(x1)}, ${fm(y1)}) va B(${fm(x1+sx*dx)}, ${fm(y1+sy*dy)}) nuqtalar orasidagi masofa nechaga teng?`,a:d,w:[dx+dy,d+1,d-1,Math.abs(dx-dy)],
+   s:`d = √(${dx}² + ${dy}²) = √${dx*dx+dy*dy} = ${d}.`};},
+ // 18: uchburchak burchaklari
+ r=>{const A=ri(r,30,80),B=ri(r,30,80),a=180-A-B;
+  return {t:`Uchburchakning ikki burchagi ${A}° va ${B}°. Uchinchi burchagi necha gradus?`,a,w:[180-A,360-A-B,A+B,a+10],s:`180° − ${A}° − ${B}° = ${a}°.`};},
+ // 19: ko'phadni ko'paytirish
+ r=>{const a=ri(r,2,7),b=nz(ri(r,-9,9)),c=nz(ri(r,-9,9)),v=a*c+b;
+  return {t:`(${poly([[a,'x'],[b,'']])})(${poly([[1,'x'],[c,'']])}) ko'paytma yoyilganda x oldidagi koeffitsient nechaga teng?`,a:v,w:[a*b*c,a+b+c,a*c,b*c,v+1],
+   s:`ax·c + b·x = ${a}·${fm(c)}·x + ${fm(b)}·x = ${fm(v)}x.`};}
+];
+
+function gen(id){
+  const r=rng(((id+1)*2654435761)>>>0);
+  const q=T[id%T.length](r);
+  const isNum=typeof q.a==='number',seen=new Set([fm(q.a)]),wr=[];
+  const add=v=>{
+    if(typeof v==='number'&&(!Number.isFinite(v)||(isNum&&!Number.isInteger(v))||(!isNum))) return;
+    const s=fm(v); if(seen.has(s)) return; seen.add(s); wr.push(s);
+  };
+  q.w.forEach(v=>{ if(typeof v==='string') {const s=v; if(!seen.has(s)){seen.add(s);wr.push(s);}} else add(v); });
+  if(isNum) for(const d of [1,-1,2,-2,3,-3,5,10]) {if(wr.length>=3)break; add(q.a+d);}
+  const opts=[fm(q.a),...wr.slice(0,3)];
+  for(let i=opts.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[opts[i],opts[j]]=[opts[j],opts[i]];}
+  return {id,t:q.t,o:opts,c:opts.indexOf(fm(q.a)),s:q.s};
+}
+
+// ---------- Test holati ----------
+const TOTAL=100, MINUTES=30, KEY='satTestState';
+let S=null,Q=[],cur=0,tick=null,onlyWrong=false;
+const $=id=>document.getElementById(id);
+const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
+const show=id=>['start','test','result'].forEach(x=>$(x).classList.toggle('hidden',x!==id));
+
+function newTest(){
+  const ids=new Set();
+  while(ids.size<TOTAL) ids.add(Math.floor(Math.random()*1000000));
+  S={ids:[...ids],ans:{},end:Date.now()+MINUTES*60000,done:false};
+  save(); openTest();
+}
+function openTest(){
+  Q=S.ids.map(gen); cur=0; show('test'); draw(); updateTimer();
+  clearInterval(tick); tick=setInterval(updateTimer,500);
+}
+function updateTimer(){
+  const left=Math.max(0,S.end-Date.now());
+  const m=Math.floor(left/60000),s=Math.floor(left/1000)%60;
+  $('timer').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  $('timer').classList.toggle('low',left<5*60000);
+  if(left<=0) finish();
+}
+function draw(){
+  const q=Q[cur];
+  $('qnum').textContent=`Savol ${cur+1} / ${TOTAL}`;
+  $('qtext').innerHTML=q.t;
+  $('opts').innerHTML='';
+  q.o.forEach((o,i)=>{
+    const b=document.createElement('button');
+    b.className='opt'+(S.ans[cur]===i?' sel':'');
+    b.innerHTML=`<b>${'ABCD'[i]}</b><span>${o}</span>`;
+    b.onclick=()=>{S.ans[cur]=i;save();draw();};
+    $('opts').appendChild(b);
+  });
+  $('prev').disabled=cur===0; $('next').disabled=cur===TOTAL-1;
+  $('count').textContent=`Javob: ${Object.keys(S.ans).length}/${TOTAL}`;
+  $('grid').innerHTML='';
+  for(let i=0;i<TOTAL;i++){
+    const b=document.createElement('button');
+    b.textContent=i+1;
+    if(S.ans[i]!==undefined) b.classList.add('done');
+    if(i===cur) b.classList.add('cur');
+    b.onclick=()=>{cur=i;draw();};
+    $('grid').appendChild(b);
+  }
+}
+function finish(force){
+  if(S.done) return;
+  S.done=true; S.finishedAt=Math.min(Date.now(),S.end); save();
+  clearInterval(tick); showResult();
+}
+function showResult(){
+  Q=S.ids.map(gen); show('result');
+  let ok=0;Q.forEach((q,i)=>{if(S.ans[i]===q.c)ok++;});
+  const answered=Object.keys(S.ans).length;
+  const used=Math.round((S.finishedAt-(S.end-MINUTES*60000))/1000);
+  $('score').textContent=`${ok} / ${TOTAL}`;
+  $('scoreInfo').textContent=`To'g'ri: ${ok} · Xato: ${answered-ok} · Javobsiz: ${TOTAL-answered} · ${Math.round(ok/TOTAL*100)}% · Vaqt: ${Math.floor(used/60)} daq ${used%60} s`;
+  renderReview();
+}
+function renderReview(){
+  const box=$('review'); box.innerHTML='';
+  Q.forEach((q,i)=>{
+    const a=S.ans[i],good=a===q.c;
+    if(onlyWrong&&good) return;
+    const d=document.createElement('div'); d.className='rev';
+    const tag=a===undefined?'<span class="tag n">javob yo\'q</span>':good?'<span class="tag g">to\'g\'ri</span>':'<span class="tag r">xato</span>';
+    d.innerHTML=`<div class="qnum">Savol ${i+1} ${tag}</div><div class="qtext" style="font-size:18px">${q.t}</div>`+
+      q.o.map((o,k)=>`<div class="opt ${k===q.c?'ok':(k===a?'bad':'')}" style="cursor:default;font-size:16px"><b>${'ABCD'[k]}</b><span>${o}</span></div>`).join('')+
+      `<div class="sol">💡 ${q.s}</div>`;
+    box.appendChild(d);
+  });
+}
+
+$('startBtn').onclick=newTest;
+$('againBtn').onclick=()=>{localStorage.removeItem(KEY);onlyWrong=false;$('toggleWrong').textContent="Faqat xatolarni ko'rsatish";newTest();};
+$('prev').onclick=()=>{if(cur>0){cur--;draw();}};
+$('next').onclick=()=>{if(cur<TOTAL-1){cur++;draw();}};
+$('finishBtn').onclick=()=>{
+  const left=TOTAL-Object.keys(S.ans).length;
+  if(confirm(left?`${left} ta savolga javob bermadingiz. Baribir yakunlaysizmi?`:'Testni yakunlaysizmi?')) finish();
+};
+$('toggleWrong').onclick=()=>{
+  onlyWrong=!onlyWrong;
+  $('toggleWrong').textContent=onlyWrong?"Hammasini ko'rsatish":"Faqat xatolarni ko'rsatish";
+  renderReview();
+};
+document.addEventListener('keydown',e=>{
+  if($('test').classList.contains('hidden')) return;
+  const k=e.key.toLowerCase(),i='abcd'.indexOf(k)>=0?'abcd'.indexOf(k):('1234'.indexOf(k));
+  if(i>=0&&i<4){S.ans[cur]=i;save();draw();}
+  else if(e.key==='ArrowRight'&&cur<TOTAL-1){cur++;draw();}
+  else if(e.key==='ArrowLeft'&&cur>0){cur--;draw();}
+});
+
+// ---------- Boshlanish ----------
+try{S=JSON.parse(localStorage.getItem(KEY)||'null');}catch(e){S=null;}
+if(S&&!S.done){ if(Date.now()>=S.end){S.done=true;S.finishedAt=S.end;save();showResult();} else openTest(); }
+else if(S&&S.done) showResult();
+else show('start');
+</script>
+</body>
+</html>
